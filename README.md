@@ -1,6 +1,6 @@
 # Toolbox
 
-A collection of handy utility tools, self-hosted at [fazz.uk](https://fazz.uk).
+A collection of handy utility tools, self-hosted at [tools.fazz.uk](https://tools.fazz.uk).
 
 ## Tools
 
