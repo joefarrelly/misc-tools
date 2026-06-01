@@ -1,6 +1,6 @@
 # misc-tools
 
-Flask web app serving a collection of utility tools at `fazz.uk`.
+Flask web app serving a collection of utility tools at `tools.fazz.uk`.
 
 ## Stack
 
@@ -53,10 +53,17 @@ requirements.txt
 
 All processing should happen in JavaScript inside the template — no server-side form handling.
 
+## Branch structure
+
+- `dev` — active development; all feature branches target here
+- `main` — production; triggers deploy on push
+
+Only `dev` can merge into `main` (enforced by `restrict-main-merges.yml`).
+
 ## Deployment
 
 Handled by `.github/workflows/deploy.yml` on push to `main`. Connects via SSH, pulls, rebuilds, and restarts the container.
 
 The production service block lives in `~/apps/docker-compose.yml` on the server (not in this repo). It uses gunicorn and the external `web` Docker network so Caddy can proxy it.
 
-Required GitHub secrets: `SERVER_HOST`, `SERVER_USER`, `SERVER_SSH_KEY`.
+Required GitHub secrets: `SERVER_HOST`, `SERVER_USER`, `SERVER_SSH_KEY`, `GH_PAT`.
