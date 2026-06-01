@@ -1,0 +1,225 @@
+{% extends "base.html" %}
+{% block title %}Cron Explainer — Toolbox{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+  <div class="col">
+    <h1 class="h3 fw-bold"><i class="bi bi-calendar-event text-success me-2"></i>Cron Explainer</h1>
+    <p class="text-muted">Paste a cron expression and get a plain English breakdown.</p>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-body p-4">
+    <label class="form-label small fw-semibold">Cron Expression</label>
+    <input type="text" id="cronInput" class="form-control font-monospace fs-5"
+      placeholder="* * * * *" oninput="explain()">
+    <div class="row mt-2 text-center text-muted small">
+      <div class="col"><span class="d-block fw-semibold">┬</span>minute</div>
+      <div class="col"><span class="d-block fw-semibold">┬</span>hour</div>
+      <div class="col"><span class="d-block fw-semibold">┬</span>day (month)</div>
+      <div class="col"><span class="d-block fw-semibold">┬</span>month</div>
+      <div class="col"><span class="d-block fw-semibold">┬</span>day (week)</div>
+    </div>
+  </div>
+</div>
+
+<div id="result" class="d-none">
+  <div class="card border-0 shadow-sm mb-4">
+    <div class="card-body p-4">
+      <div id="explanation" class="fs-5"></div>
+    </div>
+  </div>
+
+  <div class="row g-3" id="fieldBreakdown"></div>
+</div>
+
+<div id="errorAlert" class="alert alert-danger d-none"></div>
+
+<div class="card border-0 shadow-sm mt-4">
+  <div class="card-header bg-white border-bottom fw-semibold small">Common examples</div>
+  <div class="card-body p-0">
+    <table class="table table-hover table-sm mb-0 small">
+      <tbody>
+        <tr class="cursor-pointer" onclick="setExample('0 * * * *')">
+          <td class="ps-3 font-monospace">0 * * * *</td>
+          <td class="text-muted">Every hour, on the hour</td>
+        </tr>
+        <tr onclick="setExample('0 0 * * *')">
+          <td class="ps-3 font-monospace">0 0 * * *</td>
+          <td class="text-muted">Every day at midnight</td>
+        </tr>
+        <tr onclick="setExample('0 9 * * 1-5')">
+          <td class="ps-3 font-monospace">0 9 * * 1-5</td>
+          <td class="text-muted">Weekdays at 9am</td>
+        </tr>
+        <tr onclick="setExample('*/15 * * * *')">
+          <td class="ps-3 font-monospace">*/15 * * * *</td>
+          <td class="text-muted">Every 15 minutes</td>
+        </tr>
+        <tr onclick="setExample('0 0 1 * *')">
+          <td class="ps-3 font-monospace">0 0 1 * *</td>
+          <td class="text-muted">First day of every month at midnight</td>
+        </tr>
+        <tr onclick="setExample('30 6 * * 0')">
+          <td class="ps-3 font-monospace">30 6 * * 0</td>
+          <td class="text-muted">Every Sunday at 6:30am</td>
+        </tr>
+        <tr onclick="setExample('0 0 * * 0')">
+          <td class="ps-3 font-monospace">0 0 * * 0</td>
+          <td class="text-muted">Every Sunday at midnight</td>
+        </tr>
+        <tr onclick="setExample('0 12 1 1 *')">
+          <td class="ps-3 font-monospace">0 12 1 1 *</td>
+          <td class="text-muted">January 1st at noon</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const MONTHS = ['January','February','March','April','May','June',
+                'July','August','September','October','November','December'];
+const WEEKDAYS = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+const MONTH_NAMES = {jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+const DOW_NAMES = {sun:0,mon:1,tue:2,wed:3,thu:4,fri:5,sat:6};
+
+function normalizeDow(v) {
+  const lower = v.toLowerCase();
+  return DOW_NAMES[lower] !== undefined ? String(DOW_NAMES[lower]) : v === '7' ? '0' : v;
+}
+
+function normalizeMonth(v) {
+  const lower = v.toLowerCase();
+  return MONTH_NAMES[lower] !== undefined ? String(MONTH_NAMES[lower]) : v;
+}
+
+function pad2(n) { return String(n).padStart(2, '0'); }
+
+function ordinal(n) {
+  const s = ['th','st','nd','rd'];
+  const v = n % 100;
+  return n + (s[(v-20)%10] || s[v] || s[0]);
+}
+
+function formatSingle(v, type) {
+  const n = parseInt(v);
+  if (type === 'month') return MONTHS[n - 1] || v;
+  if (type === 'dow') return WEEKDAYS[n % 7] || v;
+  if (type === 'hour') return `${pad2(n)}:00`;
+  if (type === 'minute') return pad2(n);
+  if (type === 'dom') return ordinal(n);
+  return v;
+}
+
+function explainValue(raw, type) {
+  const v = type === 'dow' ? raw.split(',').map(normalizeDow).join(',')
+           : type === 'month' ? raw.split(',').map(normalizeMonth).join(',')
+           : raw;
+
+  if (v === '*') return null;
+
+  if (v.includes(',')) {
+    return v.split(',').map(p => explainSingle(p, type)).join(', ');
+  }
+  return explainSingle(v, type);
+}
+
+function explainSingle(v, type) {
+  if (v.includes('/')) {
+    const [start, step] = v.split('/');
+    const unit = { minute:'minute', hour:'hour', dom:'day', month:'month', dow:'weekday' }[type];
+    if (start === '*' || start === '0') return `every ${step} ${unit}s`;
+    return `every ${step} ${unit}s starting at ${formatSingle(start, type)}`;
+  }
+  if (v.includes('-')) {
+    const [from, to] = v.split('-');
+    return `${formatSingle(from, type)}–${formatSingle(to, type)}`;
+  }
+  return formatSingle(v, type);
+}
+
+function explain() {
+  const raw = document.getElementById("cronInput").value.trim();
+  const resultEl = document.getElementById("result");
+  const errEl = document.getElementById("errorAlert");
+  errEl.classList.add("d-none");
+  resultEl.classList.add("d-none");
+
+  if (!raw) return;
+
+  const parts = raw.split(/\s+/);
+  if (parts.length !== 5) {
+    errEl.textContent = `Expected 5 fields (got ${parts.length}): minute hour day-of-month month day-of-week`;
+    errEl.classList.remove("d-none");
+    return;
+  }
+
+  const [minRaw, hourRaw, domRaw, monthRaw, dowRaw] = parts;
+  const min = explainValue(minRaw, 'minute');
+  const hour = explainValue(hourRaw, 'hour');
+  const dom = explainValue(domRaw, 'dom');
+  const month = explainValue(monthRaw, 'month');
+  const dow = explainValue(dowRaw, 'dow');
+
+  // Build sentence
+  let sentence = '';
+
+  if (!min && !hour) {
+    sentence += 'Every minute';
+  } else if (min && !hour) {
+    sentence += `At minute ${min} of every hour`;
+  } else if (!min && hour) {
+    sentence += `Every minute during ${hour}`;
+  } else {
+    sentence += `At ${hour.replace(':00','')}:${min}`;
+  }
+
+  if (dom || month || dow) {
+    if (month) sentence += `, in ${month}`;
+    if (dom) sentence += `, on the ${dom} of the month`;
+    if (dow) sentence += `, on ${dow}`;
+  } else {
+    sentence += ', every day';
+  }
+
+  document.getElementById("explanation").innerHTML =
+    `<i class="bi bi-chat-text text-success me-2"></i>${sentence}`;
+
+  // Field breakdown cards
+  const fields = [
+    { label: 'Minute', raw: minRaw, explained: min || 'Every minute', color: 'primary' },
+    { label: 'Hour', raw: hourRaw, explained: hour || 'Every hour', color: 'success' },
+    { label: 'Day of month', raw: domRaw, explained: dom || 'Every day', color: 'warning' },
+    { label: 'Month', raw: monthRaw, explained: month || 'Every month', color: 'danger' },
+    { label: 'Day of week', raw: dowRaw, explained: dow || 'Every day', color: 'info' },
+  ];
+
+  document.getElementById("fieldBreakdown").innerHTML = fields.map(f => `
+    <div class="col-sm-6 col-lg">
+      <div class="card border-0 shadow-sm text-center h-100">
+        <div class="card-header bg-white border-bottom py-2">
+          <span class="small fw-semibold text-muted">${f.label}</span>
+        </div>
+        <div class="card-body py-3">
+          <div class="font-monospace fs-4 fw-bold text-${f.color} mb-1">${f.raw}</div>
+          <div class="small text-muted">${f.explained}</div>
+        </div>
+      </div>
+    </div>`).join('');
+
+  resultEl.classList.remove("d-none");
+}
+
+function setExample(expr) {
+  document.getElementById("cronInput").value = expr;
+  explain();
+}
+</script>
+<style>
+tr { cursor: pointer; }
+</style>
+{% endblock %}

@@ -1,0 +1,220 @@
+{% extends "base.html" %}
+{% block title %}CSV ↔ JSON — Toolbox{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+  <div class="col">
+    <h1 class="h3 fw-bold"><i class="bi bi-table text-primary me-2"></i>CSV ↔ JSON</h1>
+    <p class="text-muted">Convert between CSV and JSON formats.</p>
+  </div>
+</div>
+
+<ul class="nav nav-tabs mb-4" id="tabs">
+  <li class="nav-item">
+    <button class="nav-link active" onclick="switchTab('csv2json', this)">CSV → JSON</button>
+  </li>
+  <li class="nav-item">
+    <button class="nav-link" onclick="switchTab('json2csv', this)">JSON → CSV</button>
+  </li>
+</ul>
+
+<!-- CSV → JSON -->
+<div id="tab-csv2json">
+  <div class="row g-4">
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+          <span class="fw-semibold">CSV Input</span>
+          <div class="d-flex gap-2 align-items-center">
+            <label class="form-label small mb-0 text-muted">Delimiter</label>
+            <select id="delimiter" class="form-select form-select-sm" style="width:auto;" onchange="csvToJson()">
+              <option value=",">, (comma)</option>
+              <option value=";">; (semicolon)</option>
+              <option value="&#9;">⇥ (tab)</option>
+            </select>
+          </div>
+        </div>
+        <div class="card-body p-3">
+          <textarea id="csvInput" class="form-control result-box border-0 p-0" rows="14"
+            placeholder="name,age,city&#10;Alice,30,London&#10;Bob,25,Dublin"
+            oninput="csvToJson()"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+          <span class="fw-semibold">
+            JSON Output
+            <span id="csvRowCount" class="text-muted fw-normal small ms-2"></span>
+          </span>
+          <button class="btn btn-sm btn-outline-primary" onclick="copyText('csvJsonOutput', this)">
+            <i class="bi bi-clipboard me-1"></i>Copy
+          </button>
+        </div>
+        <div class="card-body p-3">
+          <pre id="csvJsonOutput" class="json-output mb-0" style="min-height:300px;"></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="csvError" class="alert alert-danger mt-3 d-none small"></div>
+</div>
+
+<!-- JSON → CSV -->
+<div id="tab-json2csv" class="d-none">
+  <div class="row g-4">
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-white border-bottom fw-semibold">JSON Input</div>
+        <div class="card-body p-3">
+          <textarea id="jsonInput" class="form-control result-box border-0 p-0" rows="14"
+            placeholder='[{"name":"Alice","age":30},{"name":"Bob","age":25}]'
+            oninput="jsonToCsv()"></textarea>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+          <span class="fw-semibold">
+            CSV Output
+            <span id="jsonRowCount" class="text-muted fw-normal small ms-2"></span>
+          </span>
+          <button class="btn btn-sm btn-outline-primary" onclick="copyText('jsonCsvOutput', this)">
+            <i class="bi bi-clipboard me-1"></i>Copy
+          </button>
+        </div>
+        <div class="card-body p-3">
+          <textarea id="jsonCsvOutput" class="form-control result-box border-0 p-0" rows="14" readonly></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="jsonError" class="alert alert-danger mt-3 d-none small"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function switchTab(name, btn) {
+  document.querySelectorAll('[id^="tab-"]').forEach(el => el.classList.add("d-none"));
+  document.getElementById(`tab-${name}`).classList.remove("d-none");
+  document.querySelectorAll('#tabs .nav-link').forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+}
+
+// CSV parser — handles quoted fields
+function parseCSV(text, delimiter) {
+  const lines = text.split(/\r?\n/).filter(l => l.trim() !== '');
+  return lines.map(line => parseLine(line, delimiter));
+}
+
+function parseLine(line, delim) {
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuotes && line[i + 1] === '"') { current += '"'; i++; }
+      else inQuotes = !inQuotes;
+    } else if (ch === delim && !inQuotes) {
+      result.push(current); current = '';
+    } else {
+      current += ch;
+    }
+  }
+  result.push(current);
+  return result;
+}
+
+function syntaxHighlight(json) {
+  json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return json.replace(
+    /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)/g,
+    match => {
+      if (/^"/.test(match)) return /:$/.test(match)
+        ? `<span class="json-key">${match}</span>`
+        : `<span class="json-string">${match}</span>`;
+      if (/true|false/.test(match)) return `<span class="json-boolean">${match}</span>`;
+      if (/null/.test(match)) return `<span class="json-null">${match}</span>`;
+      return `<span class="json-number">${match}</span>`;
+    }
+  );
+}
+
+function csvToJson() {
+  const raw = document.getElementById("csvInput").value.trim();
+  const delimiter = document.getElementById("delimiter").value;
+  const errEl = document.getElementById("csvError");
+  const outEl = document.getElementById("csvJsonOutput");
+  errEl.classList.add("d-none");
+
+  if (!raw) { outEl.innerHTML = ''; document.getElementById("csvRowCount").textContent = ''; return; }
+
+  try {
+    const rows = parseCSV(raw, delimiter);
+    if (rows.length < 2) { outEl.innerHTML = ''; return; }
+
+    const headers = rows[0];
+    const data = rows.slice(1).map(row => {
+      const obj = {};
+      headers.forEach((h, i) => { obj[h.trim()] = row[i] ?? ''; });
+      return obj;
+    });
+
+    const json = JSON.stringify(data, null, 2);
+    outEl.innerHTML = syntaxHighlight(json);
+    document.getElementById("csvRowCount").textContent = `${data.length} row${data.length !== 1 ? 's' : ''}`;
+  } catch (e) {
+    errEl.textContent = e.message;
+    errEl.classList.remove("d-none");
+    outEl.innerHTML = '';
+  }
+}
+
+function jsonToCsv() {
+  const raw = document.getElementById("jsonInput").value.trim();
+  const errEl = document.getElementById("jsonError");
+  const outEl = document.getElementById("jsonCsvOutput");
+  errEl.classList.add("d-none");
+
+  if (!raw) { outEl.value = ''; document.getElementById("jsonRowCount").textContent = ''; return; }
+
+  try {
+    const data = JSON.parse(raw);
+    if (!Array.isArray(data)) throw new Error('Input must be a JSON array of objects.');
+    if (data.length === 0) { outEl.value = ''; return; }
+
+    const headers = [...new Set(data.flatMap(row => Object.keys(row)))];
+
+    function escapeCell(val) {
+      const s = val === null || val === undefined ? '' : String(val);
+      return s.includes(',') || s.includes('"') || s.includes('\n')
+        ? `"${s.replace(/"/g, '""')}"`
+        : s;
+    }
+
+    const rows = data.map(row => headers.map(h => escapeCell(row[h])).join(','));
+    outEl.value = [headers.join(','), ...rows].join('\n');
+    document.getElementById("jsonRowCount").textContent = `${data.length} row${data.length !== 1 ? 's' : ''}`;
+  } catch (e) {
+    errEl.textContent = e.message;
+    errEl.classList.remove("d-none");
+    outEl.value = '';
+  }
+}
+
+async function copyText(id, btn) {
+  const el = document.getElementById(id);
+  const text = el.tagName === 'PRE' ? el.textContent : el.value;
+  if (!text) return;
+  await navigator.clipboard.writeText(text);
+  const orig = btn.innerHTML;
+  btn.innerHTML = '<i class="bi bi-check me-1"></i>Copied!';
+  setTimeout(() => { btn.innerHTML = orig; }, 1500);
+}
+</script>
+{% endblock %}

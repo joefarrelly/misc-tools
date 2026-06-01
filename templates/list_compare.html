@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+{% block title %}Compare Lists — Toolbox{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+  <div class="col">
+    <h1 class="h3 fw-bold"><i class="bi bi-intersect text-success me-2"></i>Compare Lists</h1>
+    <p class="text-muted">Find what's shared or unique between two lists.</p>
+  </div>
+</div>
+
+<div class="row g-3 mb-3">
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-bottom fw-semibold">List A</div>
+      <div class="card-body p-3">
+        <textarea id="listA" class="form-control result-box border-0 p-0"
+          rows="8" placeholder="One item per line..." oninput="compare()"></textarea>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card border-0 shadow-sm">
+      <div class="card-header bg-white border-bottom fw-semibold">List B</div>
+      <div class="card-body p-3">
+        <textarea id="listB" class="form-control result-box border-0 p-0"
+          rows="8" placeholder="One item per line..." oninput="compare()"></textarea>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row mb-3">
+  <div class="col d-flex gap-3 align-items-center">
+    <div class="form-check form-switch mb-0">
+      <input class="form-check-input" type="checkbox" id="caseSensitive" checked>
+      <label class="form-check-label small" for="caseSensitive">Case sensitive</label>
+    </div>
+    <div class="form-check form-switch mb-0">
+      <input class="form-check-input" type="checkbox" id="trimWhitespace" checked>
+      <label class="form-check-label small" for="trimWhitespace">Trim whitespace</label>
+    </div>
+    <button class="btn btn-sm btn-outline-secondary ms-auto" onclick="clearAll()">Clear all</button>
+  </div>
+</div>
+
+<div class="row g-3">
+
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+        <span class="fw-semibold text-success">
+          <i class="bi bi-check-circle me-1"></i>In both
+          <span id="bothCount" class="badge bg-success badge-count ms-1">0</span>
+        </span>
+        <button class="btn btn-sm btn-outline-secondary" onclick="copySection('bothList')">
+          <i class="bi bi-clipboard"></i>
+        </button>
+      </div>
+      <div class="card-body p-3">
+        <textarea id="bothList" class="form-control result-box border-0 p-0" rows="10" readonly></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+        <span class="fw-semibold text-primary">
+          <i class="bi bi-a-circle me-1"></i>Only in A
+          <span id="onlyACount" class="badge bg-primary badge-count ms-1">0</span>
+        </span>
+        <button class="btn btn-sm btn-outline-secondary" onclick="copySection('onlyAList')">
+          <i class="bi bi-clipboard"></i>
+        </button>
+      </div>
+      <div class="card-body p-3">
+        <textarea id="onlyAList" class="form-control result-box border-0 p-0" rows="10" readonly></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+        <span class="fw-semibold text-warning">
+          <i class="bi bi-b-circle me-1"></i>Only in B
+          <span id="onlyBCount" class="badge bg-warning badge-count ms-1">0</span>
+        </span>
+        <button class="btn btn-sm btn-outline-secondary" onclick="copySection('onlyBList')">
+          <i class="bi bi-clipboard"></i>
+        </button>
+      </div>
+      <div class="card-body p-3">
+        <textarea id="onlyBList" class="form-control result-box border-0 p-0" rows="10" readonly></textarea>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function parseLines(text) {
+  const trim = document.getElementById("trimWhitespace").checked;
+  const caseSensitive = document.getElementById("caseSensitive").checked;
+  return text.split("\n")
+    .map(l => trim ? l.trim() : l)
+    .filter(l => l !== "")
+    .map(l => caseSensitive ? l : l.toLowerCase());
+}
+
+function compare() {
+  const rawA = document.getElementById("listA").value;
+  const rawB = document.getElementById("listB").value;
+  const trim = document.getElementById("trimWhitespace").checked;
+  const caseSensitive = document.getElementById("caseSensitive").checked;
+
+  function getLines(raw) {
+    return raw.split("\n")
+      .map(l => trim ? l.trim() : l)
+      .filter(l => l !== "");
+  }
+
+  const linesA = getLines(rawA);
+  const linesB = getLines(rawB);
+
+  const keyA = new Set(linesA.map(l => caseSensitive ? l : l.toLowerCase()));
+  const keyB = new Set(linesB.map(l => caseSensitive ? l : l.toLowerCase()));
+
+  const both = linesA.filter(l => keyB.has(caseSensitive ? l : l.toLowerCase()));
+  const onlyA = linesA.filter(l => !keyB.has(caseSensitive ? l : l.toLowerCase()));
+  const onlyB = linesB.filter(l => !keyA.has(caseSensitive ? l : l.toLowerCase()));
+
+  document.getElementById("bothList").value = both.join("\n");
+  document.getElementById("onlyAList").value = onlyA.join("\n");
+  document.getElementById("onlyBList").value = onlyB.join("\n");
+
+  document.getElementById("bothCount").textContent = both.length;
+  document.getElementById("onlyACount").textContent = onlyA.length;
+  document.getElementById("onlyBCount").textContent = onlyB.length;
+}
+
+function clearAll() {
+  ["listA", "listB", "bothList", "onlyAList", "onlyBList"].forEach(id => {
+    document.getElementById(id).value = "";
+  });
+  ["bothCount", "onlyACount", "onlyBCount"].forEach(id => {
+    document.getElementById(id).textContent = "0";
+  });
+}
+
+async function copySection(id) {
+  const text = document.getElementById(id).value;
+  if (!text) return;
+  await navigator.clipboard.writeText(text);
+}
+
+document.getElementById("caseSensitive").addEventListener("change", compare);
+document.getElementById("trimWhitespace").addEventListener("change", compare);
+</script>
+{% endblock %}

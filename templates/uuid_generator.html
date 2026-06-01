@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}UUID Generator — Toolbox{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+  <div class="col">
+    <h1 class="h3 fw-bold"><i class="bi bi-fingerprint text-secondary me-2"></i>UUID Generator</h1>
+    <p class="text-muted">Generate v4 UUIDs one at a time or in bulk.</p>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-body p-4">
+    <div class="row g-3 align-items-end">
+      <div class="col-sm-4 col-md-3">
+        <label class="form-label small fw-semibold">Count</label>
+        <input type="number" id="count" class="form-control" value="1" min="1" max="500">
+      </div>
+      <div class="col-sm-4 col-md-3">
+        <label class="form-label small fw-semibold">Format</label>
+        <select id="fmt" class="form-select">
+          <option value="lower">lowercase</option>
+          <option value="upper">UPPERCASE</option>
+          <option value="nohyphens">no-hyphens</option>
+          <option value="braces">{braces}</option>
+        </select>
+      </div>
+      <div class="col-sm-4 col-md-3">
+        <button class="btn btn-primary w-100" onclick="generate()">
+          <i class="bi bi-shuffle me-1"></i>Generate
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="outputSection" class="d-none">
+  <div class="card border-0 shadow-sm">
+    <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+      <span class="fw-semibold">
+        Generated UUIDs
+        <span id="countLabel" class="text-muted fw-normal small ms-2"></span>
+      </span>
+      <button class="btn btn-sm btn-outline-primary" onclick="copyAll()" id="copyBtn">
+        <i class="bi bi-clipboard me-1"></i>Copy all
+      </button>
+    </div>
+    <div class="card-body p-3">
+      <textarea id="output" class="form-control result-box border-0 p-0" rows="14" readonly></textarea>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function applyFormat(uuid) {
+  const fmt = document.getElementById("fmt").value;
+  if (fmt === 'upper') return uuid.toUpperCase();
+  if (fmt === 'nohyphens') return uuid.replace(/-/g, '');
+  if (fmt === 'braces') return `{${uuid}}`;
+  return uuid;
+}
+
+function generate() {
+  const count = Math.min(Math.max(parseInt(document.getElementById("count").value) || 1, 1), 500);
+  const uuids = Array.from({ length: count }, () => applyFormat(crypto.randomUUID()));
+  document.getElementById("output").value = uuids.join('\n');
+  document.getElementById("countLabel").textContent = `${count} UUID${count !== 1 ? 's' : ''}`;
+  document.getElementById("outputSection").classList.remove("d-none");
+}
+
+async function copyAll() {
+  const text = document.getElementById("output").value;
+  if (!text) return;
+  await navigator.clipboard.writeText(text);
+  const btn = document.getElementById("copyBtn");
+  btn.innerHTML = '<i class="bi bi-check me-1"></i>Copied!';
+  setTimeout(() => { btn.innerHTML = '<i class="bi bi-clipboard me-1"></i>Copy all'; }, 1500);
+}
+
+// Generate one on load
+generate();
+</script>
+{% endblock %}

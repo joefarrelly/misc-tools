@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}URL Encode/Decode — Toolbox{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+  <div class="col">
+    <h1 class="h3 fw-bold"><i class="bi bi-link-45deg text-info me-2"></i>URL Encode / Decode</h1>
+    <p class="text-muted">Encode or decode URL components and query strings.</p>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Encode -->
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white border-bottom fw-semibold">
+        <i class="bi bi-arrow-right-circle me-1 text-info"></i>Text &rarr; URL Encoded
+      </div>
+      <div class="card-body p-4">
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Input</label>
+          <textarea id="encodeInput" class="form-control result-box" rows="5"
+            placeholder="https://example.com/path?q=hello world&foo=bar&baz"
+            oninput="encode()"></textarea>
+        </div>
+        <div class="mb-2">
+          <label class="form-label small fw-semibold">Encoded</label>
+          <textarea id="encodeOutput" class="form-control result-box" rows="5" readonly></textarea>
+        </div>
+        <button class="btn btn-sm btn-outline-primary" onclick="copyField('encodeOutput', this)">
+          <i class="bi bi-clipboard me-1"></i>Copy
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Decode -->
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white border-bottom fw-semibold">
+        <i class="bi bi-arrow-left-circle me-1 text-info"></i>URL Encoded &rarr; Text
+      </div>
+      <div class="card-body p-4">
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Input</label>
+          <textarea id="decodeInput" class="form-control result-box" rows="5"
+            placeholder="https%3A%2F%2Fexample.com%2Fpath%3Fq%3Dhello%20world"
+            oninput="decode()"></textarea>
+        </div>
+        <div class="mb-2">
+          <label class="form-label small fw-semibold">Decoded</label>
+          <textarea id="decodeOutput" class="form-control result-box" rows="5" readonly></textarea>
+        </div>
+        <div class="d-flex align-items-center gap-2">
+          <button class="btn btn-sm btn-outline-primary" onclick="copyField('decodeOutput', this)">
+            <i class="bi bi-clipboard me-1"></i>Copy
+          </button>
+          <span id="decodeError" class="text-danger small"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function encode() {
+  const val = document.getElementById("encodeInput").value;
+  document.getElementById("encodeOutput").value = val ? encodeURIComponent(val) : '';
+}
+
+function decode() {
+  const val = document.getElementById("decodeInput").value;
+  const errEl = document.getElementById("decodeError");
+  if (!val) { document.getElementById("decodeOutput").value = ''; errEl.textContent = ''; return; }
+  try {
+    document.getElementById("decodeOutput").value = decodeURIComponent(val);
+    errEl.textContent = '';
+  } catch {
+    document.getElementById("decodeOutput").value = '';
+    errEl.textContent = 'Invalid URL-encoded string';
+  }
+}
+
+async function copyField(id, btn) {
+  const val = document.getElementById(id).value;
+  if (!val) return;
+  await navigator.clipboard.writeText(val);
+  const orig = btn.innerHTML;
+  btn.innerHTML = '<i class="bi bi-check me-1"></i>Copied!';
+  setTimeout(() => { btn.innerHTML = orig; }, 1500);
+}
+</script>
+{% endblock %}

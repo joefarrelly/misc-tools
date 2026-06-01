@@ -1,0 +1,10 @@
+services:
+  web:
+    build: .
+    ports:
+      - "5002:5000"
+    volumes:
+      - .:/app
+    command: flask run --host=0.0.0.0 --debug
+    environment:
+      - FLASK_APP=app.py

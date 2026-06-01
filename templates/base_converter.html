@@ -1,0 +1,137 @@
+{% extends "base.html" %}
+{% block title %}Number Base Converter — Toolbox{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+  <div class="col">
+    <h1 class="h3 fw-bold"><i class="bi bi-hash text-danger me-2"></i>Number Base Converter</h1>
+    <p class="text-muted">Convert between decimal, binary, octal, and hexadecimal.</p>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-body p-4">
+    <div class="row g-3 align-items-end">
+      <div class="col-md-6">
+        <label class="form-label small fw-semibold">Input Value</label>
+        <input type="text" id="inputVal" class="form-control font-monospace"
+          placeholder="Enter a number..." oninput="convert()">
+      </div>
+      <div class="col-md-3">
+        <label class="form-label small fw-semibold">Input Base</label>
+        <select id="inputBase" class="form-select font-monospace" onchange="convert()">
+          <option value="10">Decimal (base 10)</option>
+          <option value="2">Binary (base 2)</option>
+          <option value="8">Octal (base 8)</option>
+          <option value="16">Hex (base 16)</option>
+        </select>
+      </div>
+      <div class="col-md-3">
+        <div id="inputError" class="text-danger small"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="results" class="row g-4 d-none">
+  <div class="col-sm-6 col-lg-3">
+    <div class="card border-0 shadow-sm text-center">
+      <div class="card-header bg-white border-bottom py-2">
+        <span class="small fw-semibold text-muted">DECIMAL</span>
+        <span class="badge bg-secondary ms-1">base 10</span>
+      </div>
+      <div class="card-body py-4">
+        <div id="dec" class="fs-4 fw-bold font-monospace text-break"></div>
+      </div>
+      <div class="card-footer bg-white border-top py-2">
+        <button class="btn btn-sm btn-outline-secondary" onclick="copyField('dec', this)">
+          <i class="bi bi-clipboard me-1"></i>Copy
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="card border-0 shadow-sm text-center">
+      <div class="card-header bg-white border-bottom py-2">
+        <span class="small fw-semibold text-muted">BINARY</span>
+        <span class="badge bg-danger ms-1">base 2</span>
+      </div>
+      <div class="card-body py-4">
+        <div id="bin" class="fs-5 fw-bold font-monospace text-break lh-lg"></div>
+      </div>
+      <div class="card-footer bg-white border-top py-2">
+        <button class="btn btn-sm btn-outline-secondary" onclick="copyField('bin', this)">
+          <i class="bi bi-clipboard me-1"></i>Copy
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="card border-0 shadow-sm text-center">
+      <div class="card-header bg-white border-bottom py-2">
+        <span class="small fw-semibold text-muted">OCTAL</span>
+        <span class="badge bg-warning text-dark ms-1">base 8</span>
+      </div>
+      <div class="card-body py-4">
+        <div id="oct" class="fs-4 fw-bold font-monospace text-break"></div>
+      </div>
+      <div class="card-footer bg-white border-top py-2">
+        <button class="btn btn-sm btn-outline-secondary" onclick="copyField('oct', this)">
+          <i class="bi bi-clipboard me-1"></i>Copy
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="col-sm-6 col-lg-3">
+    <div class="card border-0 shadow-sm text-center">
+      <div class="card-header bg-white border-bottom py-2">
+        <span class="small fw-semibold text-muted">HEX</span>
+        <span class="badge bg-primary ms-1">base 16</span>
+      </div>
+      <div class="card-body py-4">
+        <div id="hex" class="fs-4 fw-bold font-monospace text-break"></div>
+      </div>
+      <div class="card-footer bg-white border-top py-2">
+        <button class="btn btn-sm btn-outline-secondary" onclick="copyField('hex', this)">
+          <i class="bi bi-clipboard me-1"></i>Copy
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function convert() {
+  const raw = document.getElementById("inputVal").value.trim();
+  const base = parseInt(document.getElementById("inputBase").value);
+  const errEl = document.getElementById("inputError");
+  const resultsEl = document.getElementById("results");
+
+  errEl.textContent = '';
+  if (!raw) { resultsEl.classList.add("d-none"); return; }
+
+  const num = parseInt(raw, base);
+  if (isNaN(num)) {
+    errEl.textContent = `"${raw}" is not a valid base-${base} number`;
+    resultsEl.classList.add("d-none");
+    return;
+  }
+
+  document.getElementById("dec").textContent = num.toString(10);
+  document.getElementById("bin").textContent = num.toString(2);
+  document.getElementById("oct").textContent = num.toString(8);
+  document.getElementById("hex").textContent = num.toString(16).toUpperCase();
+  resultsEl.classList.remove("d-none");
+}
+
+async function copyField(id, btn) {
+  const text = document.getElementById(id).textContent;
+  await navigator.clipboard.writeText(text);
+  const orig = btn.innerHTML;
+  btn.innerHTML = '<i class="bi bi-check me-1"></i>Copied!';
+  setTimeout(() => { btn.innerHTML = orig; }, 1500);
+}
+</script>
+{% endblock %}

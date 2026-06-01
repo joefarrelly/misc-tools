@@ -1,0 +1,237 @@
+{% extends "base.html" %}
+{% block title %}Epoch Converter — Toolbox{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+  <div class="col">
+    <h1 class="h3 fw-bold"><i class="bi bi-clock-history text-warning me-2"></i>Epoch Converter</h1>
+    <p class="text-muted">Convert between Unix timestamps and human-readable dates.</p>
+  </div>
+</div>
+
+<div class="row g-4">
+
+  <!-- Epoch → Human -->
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white border-bottom fw-semibold">
+        <i class="bi bi-arrow-right-circle me-1 text-warning"></i>Epoch &rarr; Date
+      </div>
+      <div class="card-body p-4">
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Unix Timestamp</label>
+          <div class="input-group">
+            <input type="number" id="epochInput" class="form-control font-monospace"
+              placeholder="e.g. 1717200000" oninput="epochToDate()">
+            <button class="btn btn-outline-secondary" onclick="useNow()">Now</button>
+          </div>
+          <div class="form-text">Accepts seconds (10-digit) or milliseconds (13-digit).</div>
+        </div>
+
+        <div id="epochResults" class="d-none">
+          <hr>
+          <div class="row g-2">
+            <div class="col-12">
+              <label class="form-label small text-muted mb-1">UTC</label>
+              <div class="input-group input-group-sm">
+                <input type="text" id="utcResult" class="form-control font-monospace" readonly>
+                <button class="btn btn-outline-secondary" onclick="copyField('utcResult')">
+                  <i class="bi bi-clipboard"></i>
+                </button>
+              </div>
+            </div>
+            <div class="col-12">
+              <label class="form-label small text-muted mb-1">Local time (<span id="tzLabel"></span>)</label>
+              <div class="input-group input-group-sm">
+                <input type="text" id="localResult" class="form-control font-monospace" readonly>
+                <button class="btn btn-outline-secondary" onclick="copyField('localResult')">
+                  <i class="bi bi-clipboard"></i>
+                </button>
+              </div>
+            </div>
+            <div class="col-12">
+              <label class="form-label small text-muted mb-1">ISO 8601</label>
+              <div class="input-group input-group-sm">
+                <input type="text" id="isoResult" class="form-control font-monospace" readonly>
+                <button class="btn btn-outline-secondary" onclick="copyField('isoResult')">
+                  <i class="bi bi-clipboard"></i>
+                </button>
+              </div>
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label small text-muted mb-1">Relative</label>
+              <input type="text" id="relativeResult" class="form-control form-control-sm font-monospace" readonly>
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label small text-muted mb-1">Day of week</label>
+              <input type="text" id="dowResult" class="form-control form-control-sm font-monospace" readonly>
+            </div>
+          </div>
+        </div>
+
+        <div id="epochError" class="alert alert-danger mt-3 d-none small"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Human → Epoch -->
+  <div class="col-lg-6">
+    <div class="card border-0 shadow-sm h-100">
+      <div class="card-header bg-white border-bottom fw-semibold">
+        <i class="bi bi-arrow-left-circle me-1 text-warning"></i>Date &rarr; Epoch
+      </div>
+      <div class="card-body p-4">
+        <div class="mb-3">
+          <label class="form-label small fw-semibold">Date &amp; Time</label>
+          <input type="datetime-local" id="dateInput" class="form-control font-monospace"
+            oninput="dateToEpoch()">
+          <div class="form-text">Uses your local timezone.</div>
+        </div>
+
+        <div class="mb-2">
+          <label class="form-label small fw-semibold">Or paste a date string</label>
+          <input type="text" id="dateStringInput" class="form-control font-monospace"
+            placeholder='e.g. "2024-06-01T12:00:00Z" or "June 1 2024"'
+            oninput="dateStringToEpoch()">
+        </div>
+
+        <div id="dateResults" class="d-none">
+          <hr>
+          <div class="row g-2">
+            <div class="col-sm-6">
+              <label class="form-label small text-muted mb-1">Seconds (s)</label>
+              <div class="input-group input-group-sm">
+                <input type="text" id="epochSeconds" class="form-control font-monospace" readonly>
+                <button class="btn btn-outline-secondary" onclick="copyField('epochSeconds')">
+                  <i class="bi bi-clipboard"></i>
+                </button>
+              </div>
+            </div>
+            <div class="col-sm-6">
+              <label class="form-label small text-muted mb-1">Milliseconds (ms)</label>
+              <div class="input-group input-group-sm">
+                <input type="text" id="epochMs" class="form-control font-monospace" readonly>
+                <button class="btn btn-outline-secondary" onclick="copyField('epochMs')">
+                  <i class="bi bi-clipboard"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="dateError" class="alert alert-danger mt-3 d-none small"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const DAYS = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+
+document.getElementById("tzLabel").textContent =
+  Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+function epochToDate() {
+  const raw = document.getElementById("epochInput").value.trim();
+  const errEl = document.getElementById("epochError");
+  const resEl = document.getElementById("epochResults");
+
+  errEl.classList.add("d-none");
+  if (!raw) { resEl.classList.add("d-none"); return; }
+
+  let ts = Number(raw);
+  if (isNaN(ts)) { showError(errEl, "Not a valid number."); resEl.classList.add("d-none"); return; }
+
+  // Auto-detect ms vs s: 13+ digits = ms
+  if (String(Math.abs(Math.floor(ts))).length >= 13) ts = ts / 1000;
+
+  const d = new Date(ts * 1000);
+  if (isNaN(d.getTime())) { showError(errEl, "Timestamp out of range."); resEl.classList.add("d-none"); return; }
+
+  document.getElementById("utcResult").value = d.toUTCString();
+  document.getElementById("localResult").value = d.toLocaleString();
+  document.getElementById("isoResult").value = d.toISOString();
+  document.getElementById("relativeResult").value = relativeTime(d);
+  document.getElementById("dowResult").value = DAYS[d.getDay()];
+
+  resEl.classList.remove("d-none");
+}
+
+function dateToEpoch() {
+  const val = document.getElementById("dateInput").value;
+  const errEl = document.getElementById("dateError");
+  const resEl = document.getElementById("dateResults");
+
+  errEl.classList.add("d-none");
+  if (!val) { resEl.classList.add("d-none"); return; }
+
+  const d = new Date(val);
+  if (isNaN(d.getTime())) { showError(errEl, "Invalid date."); resEl.classList.add("d-none"); return; }
+
+  fillEpochResults(d, resEl);
+}
+
+function dateStringToEpoch() {
+  const val = document.getElementById("dateStringInput").value.trim();
+  const errEl = document.getElementById("dateError");
+  const resEl = document.getElementById("dateResults");
+
+  errEl.classList.add("d-none");
+  if (!val) { resEl.classList.add("d-none"); return; }
+
+  const d = new Date(val);
+  if (isNaN(d.getTime())) {
+    showError(errEl, "Could not parse date string. Try ISO 8601 format.");
+    resEl.classList.add("d-none");
+    return;
+  }
+
+  fillEpochResults(d, resEl);
+  // Clear the picker so they don't conflict
+  document.getElementById("dateInput").value = "";
+}
+
+function fillEpochResults(d, resEl) {
+  const ms = d.getTime();
+  document.getElementById("epochSeconds").value = Math.floor(ms / 1000);
+  document.getElementById("epochMs").value = ms;
+  resEl.classList.remove("d-none");
+}
+
+function useNow() {
+  const now = Math.floor(Date.now() / 1000);
+  document.getElementById("epochInput").value = now;
+  epochToDate();
+}
+
+function relativeTime(d) {
+  const diffMs = Date.now() - d.getTime();
+  const diffS = Math.round(diffMs / 1000);
+  const abs = Math.abs(diffS);
+  const future = diffS < 0;
+  const suffix = future ? "from now" : "ago";
+
+  if (abs < 60) return `${abs} second${abs !== 1 ? "s" : ""} ${suffix}`;
+  if (abs < 3600) { const m = Math.round(abs/60); return `${m} minute${m!==1?"s":""} ${suffix}`; }
+  if (abs < 86400) { const h = Math.round(abs/3600); return `${h} hour${h!==1?"s":""} ${suffix}`; }
+  const days = Math.round(abs/86400);
+  if (days < 365) return `${days} day${days!==1?"s":""} ${suffix}`;
+  const years = (days/365).toFixed(1);
+  return `${years} year${years!=="1.0"?"s":""} ${suffix}`;
+}
+
+function showError(el, msg) {
+  el.textContent = msg;
+  el.classList.remove("d-none");
+}
+
+async function copyField(id) {
+  const val = document.getElementById(id).value;
+  if (!val) return;
+  await navigator.clipboard.writeText(val);
+}
+</script>
+{% endblock %}

@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block title %}Toolbox{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+  <div class="col">
+    <h1 class="h3 fw-bold">Tools</h1>
+    <p class="text-muted">A collection of handy utilities, all in one place.</p>
+  </div>
+</div>
+
+<!-- Lists -->
+<h6 class="text-uppercase text-muted fw-semibold mb-3 small">Lists</h6>
+<div class="row g-4 mb-4">
+  <div class="col-md-4">
+    <a href="/dedupe" class="text-decoration-none">
+      <div class="card h-100 tool-card border-0 shadow-sm">
+        <div class="card-body p-4">
+          <div class="fs-2 mb-2"><i class="bi bi-funnel text-primary"></i></div>
+          <h6 class="fw-bold">De-dupe List</h6>
+          <p class="text-muted small mb-0">Remove duplicate lines from a list. First occurrence wins, order preserved.</p>
+        </div>
+      </div>
+    </a>
+  </div>
+  <div class="col-md-4">
+    <a href="/list-compare" class="text-decoration-none">
+      <div class="card h-100 tool-card border-0 shadow-sm">
+        <div class="card-body p-4">
+          <div class="fs-2 mb-2"><i class="bi bi-intersect text-success"></i></div>
+          <h6 class="fw-bold">Compare Lists</h6>
+          <p class="text-muted small mb-0">See what's in both lists, only in A, or only in B.</p>
+        </div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<!-- Images -->
+<h6 class="text-uppercase text-muted fw-semibold mb-3 small">Images</h6>
+<div class="row g-4 mb-4">
+  <div class="col-md-4">
+    <a href="/image-ocr" class="text-decoration-none">
+      <div class="card h-100 tool-card border-0 shadow-sm">
+        <div class="card-body p-4">
+          <div class="fs-2 mb-2"><i class="bi bi-image text-secondary"></i></div>
+          <h6 class="fw-bold">Image to Text</h6>
+          <p class="text-muted small mb-0">Extract text from an image using OCR. Runs locally in your browser.</p>
+        </div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<!-- Text -->
+<h6 class="text-uppercase text-muted fw-semibold mb-3 small">Text &amp; Encoding</h6>
+<div class="row g-4 mb-4">
+  <div class="col-md-4">
+    <a href="/case-converter" class="text-decoration-none">
+      <div class="card h-100 tool-card border-0 shadow-sm">
+        <div class="card-body p-4">
+          <div class="fs-2 mb-2"><i class="bi bi-type text-primary"></i></div>
+          <h6 class="fw-bold">Case Converter</h6>
+          <p class="text-muted small mb-0">Convert text to camelCase, snake_case, kebab-case, UPPER, Title Case, and more.</p>
+        </div>
+      </div>
+    </a>
+  </div>
+  <div class="col-md-4">
+    <a href="/base64" class="text-decoration-none">
+      <div class="card h-100 tool-card border-0 shadow-sm">
+        <div class="card-body p-4">
+          <div class="fs-2 mb-2"><i class="bi bi-lock text-secondary"></i></div>
+          <h6 class="fw-bold">Base64 Encode/Decode</h6>
+          <p class="text-muted small mb-0">Encode plain text to Base64 or decode Base64 back to text.</p>
+        </div>
+      </div>
+    </a>
+  </div>
+  <div class="col-md-4">
+    <a href="/url-encode" class="text-decoration-none">
+      <div class="card h-100 tool-card border-0 shadow-sm">
+        <div class="card-body p-4">
+          <div class="fs-2 mb-2"><i class="bi bi-link-45deg text-info"></i></div>
+          <h6 class="fw-bold">URL Encode/Decode</h6>
+          <p class="text-muted small mb-0">Encode or decode URL components and query strings.</p>
+        </div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<!-- Data -->
+<h6 class="text-uppercase text-muted fw-semibold mb-3 small">Data</h6>
+<div class="row g-4 mb-4">
+  <div class="col-md-4">
+    <a href="/json-formatter" class="text-decoration-none">
+      <div class="card h-100 tool-card border-0 shadow-sm">
+        <div class="card-body p-4">
+          <div class="fs-2 mb-2"><i class="bi bi-braces text-warning"></i></div>
+          <h6 class="fw-bold">JSON Formatter</h6>
+          <p class="text-muted small mb-0">Pretty-print and validate JSON with syntax highlighting. Also minifies.</p>
+        </div>
+      </div>
+    </a>
+  </div>
+  <div class="col-md-4">
+    <a href="/jwt-decoder" class="text-decoration-none">
+      <div class="card h-100 tool-card border-0 shadow-sm">
+        <div class="card-body p-4">
+          <div class="fs-2 mb-2"><i class="bi bi-shield-check text-success"></i></div>
+          <h6 class="fw-bold">JWT Decoder</h6>
+          <p class="text-muted small mb-0">Decode a JWT token and inspect the header and payload. Signature not verified.</p>
+        </div>
+      </div>
+    </a>
+  </div>
+  <div class="col-md-4">
+    <a href="/csv-json" class="text-decoration-none">
+      <div class="card h-100 tool-card border-0 shadow-sm">
+        <div class="card-body p-4">
+          <div class="fs-2 mb-2"><i class="bi bi-table text-primary"></i></div>
+          <h6 class="fw-bold">CSV ↔ JSON</h6>
+          <p class="text-muted small mb-0">Convert CSV data to JSON and back. Handles quoted fields and nested values.</p>
+        </div>
+      </div>
+    </a>
+  </div>
+</div>
+
+<!-- Dev Tools -->
+<h6 class="text-uppercase text-muted fw-semibold mb-3 small">Dev Tools</h6>
+<div class="row g-4 mb-4">
+  <div class="col-md-4">
+    <a href="/epoch" class="text-decoration-none">
+      <div class="card h-100 tool-card border-0 shadow-sm">
+        <div class="card-body p-4">
+          <div class="fs-2 mb-2"><i class="bi bi-clock-history text-warning"></i></div>
+          <h6 class="fw-bold">Epoch Converter</h6>
+          <p class="text-muted small mb-0">Convert Unix timestamps to dates and back. Auto-detects seconds vs milliseconds.</p>
+        </div>
+      </div>
+    </a>
+  </div>
+  <div class="col-md-4">
+    <a href="/base-converter" class="text-decoration-none">
+      <div class="card h-100 tool-card border-0 shadow-sm">
+        <div class="card-body p-4">
+          <div class="fs-2 mb-2"><i class="bi bi-hash text-danger"></i></div>
+          <h6 class="fw-bold">Number Base Converter</h6>
+          <p class="text-muted small mb-0">Convert between decimal, binary, octal, and hexadecimal.</p>
+        </div>
+      </div>
+    </a>
+  </div>
+  <div class="col-md-4">
+    <a href="/cron-explainer" class="text-decoration-none">
+      <div class="card h-100 tool-card border-0 shadow-sm">
+        <div class="card-body p-4">
+          <div class="fs-2 mb-2"><i class="bi bi-calendar-event text-success"></i></div>
+          <h6 class="fw-bold">Cron Explainer</h6>
+          <p class="text-muted small mb-0">Paste a cron expression and get a plain English explanation of when it fires.</p>
+        </div>
+      </div>
+    </a>
+  </div>
+  <div class="col-md-4">
+    <a href="/uuid-generator" class="text-decoration-none">
+      <div class="card h-100 tool-card border-0 shadow-sm">
+        <div class="card-body p-4">
+          <div class="fs-2 mb-2"><i class="bi bi-fingerprint text-secondary"></i></div>
+          <h6 class="fw-bold">UUID Generator</h6>
+          <p class="text-muted small mb-0">Generate v4 UUIDs one at a time or in bulk.</p>
+        </div>
+      </div>
+    </a>
+  </div>
+  <div class="col-md-4">
+    <a href="/regex-tester" class="text-decoration-none">
+      <div class="card h-100 tool-card border-0 shadow-sm">
+        <div class="card-body p-4">
+          <div class="fs-2 mb-2"><i class="bi bi-asterisk text-danger"></i></div>
+          <h6 class="fw-bold">Regex Tester</h6>
+          <p class="text-muted small mb-0">Test regular expressions against a string with live match highlighting.</p>
+        </div>
+      </div>
+    </a>
+  </div>
+</div>
+{% endblock %}

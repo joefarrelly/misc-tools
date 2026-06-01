@@ -1,0 +1,146 @@
+{% extends "base.html" %}
+{% block title %}JWT Decoder — Toolbox{% endblock %}
+
+{% block content %}
+<div class="row mb-3">
+  <div class="col">
+    <h1 class="h3 fw-bold"><i class="bi bi-shield-check text-success me-2"></i>JWT Decoder</h1>
+    <p class="text-muted">Decode a JWT token and inspect its contents. Signature is <strong>not verified</strong>.</p>
+  </div>
+</div>
+
+<div class="card border-0 shadow-sm mb-4">
+  <div class="card-header bg-white border-bottom fw-semibold">Token</div>
+  <div class="card-body p-3">
+    <textarea id="tokenInput" class="form-control result-box" rows="4"
+      placeholder="Paste your JWT here: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+      oninput="decode()"></textarea>
+  </div>
+</div>
+
+<div id="results" class="d-none">
+  <div class="row g-4">
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+          <span class="fw-semibold"><span class="badge bg-primary me-2">Header</span>Algorithm &amp; type</span>
+          <button class="btn btn-sm btn-outline-secondary" onclick="copyPre('headerOutput')">
+            <i class="bi bi-clipboard"></i>
+          </button>
+        </div>
+        <div class="card-body p-3">
+          <pre id="headerOutput" class="json-output mb-0" style="min-height:100px;"></pre>
+        </div>
+      </div>
+    </div>
+    <div class="col-lg-6">
+      <div class="card border-0 shadow-sm h-100">
+        <div class="card-header bg-white border-bottom d-flex justify-content-between align-items-center">
+          <span class="fw-semibold"><span class="badge bg-success me-2">Payload</span>Claims</span>
+          <button class="btn btn-sm btn-outline-secondary" onclick="copyPre('payloadOutput')">
+            <i class="bi bi-clipboard"></i>
+          </button>
+        </div>
+        <div class="card-body p-3">
+          <pre id="payloadOutput" class="json-output mb-0" style="min-height:100px;"></pre>
+        </div>
+      </div>
+    </div>
+    <div class="col-12">
+      <div class="card border-0 shadow-sm">
+        <div class="card-header bg-white border-bottom fw-semibold">
+          <span class="badge bg-secondary me-2">Signature</span>Raw (not verified)
+        </div>
+        <div class="card-body p-3">
+          <code id="signatureOutput" class="text-break small"></code>
+        </div>
+      </div>
+    </div>
+    <div class="col-12" id="expirySection">
+      <div id="expiryAlert" class="alert mb-0"></div>
+    </div>
+  </div>
+</div>
+
+<div id="errorAlert" class="alert alert-danger d-none"></div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function syntaxHighlight(json) {
+  json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  return json.replace(
+    /("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)/g,
+    match => {
+      if (/^"/.test(match)) return /:$/.test(match)
+        ? `<span class="json-key">${match}</span>`
+        : `<span class="json-string">${match}</span>`;
+      if (/true|false/.test(match)) return `<span class="json-boolean">${match}</span>`;
+      if (/null/.test(match)) return `<span class="json-null">${match}</span>`;
+      return `<span class="json-number">${match}</span>`;
+    }
+  );
+}
+
+function base64urlDecode(str) {
+  str = str.replace(/-/g, '+').replace(/_/g, '/');
+  while (str.length % 4) str += '=';
+  return decodeURIComponent(escape(atob(str)));
+}
+
+function decode() {
+  const token = document.getElementById("tokenInput").value.trim();
+  const resultsEl = document.getElementById("results");
+  const errEl = document.getElementById("errorAlert");
+
+  resultsEl.classList.add("d-none");
+  errEl.classList.add("d-none");
+
+  if (!token) return;
+
+  const parts = token.split('.');
+  if (parts.length !== 3) {
+    errEl.textContent = 'Invalid JWT: expected 3 dot-separated parts.';
+    errEl.classList.remove("d-none");
+    return;
+  }
+
+  try {
+    const header = JSON.parse(base64urlDecode(parts[0]));
+    const payload = JSON.parse(base64urlDecode(parts[1]));
+
+    document.getElementById("headerOutput").innerHTML =
+      syntaxHighlight(JSON.stringify(header, null, 2));
+    document.getElementById("payloadOutput").innerHTML =
+      syntaxHighlight(JSON.stringify(payload, null, 2));
+    document.getElementById("signatureOutput").textContent = parts[2];
+
+    // Expiry
+    const expSection = document.getElementById("expirySection");
+    const expAlert = document.getElementById("expiryAlert");
+    if (payload.exp) {
+      const expDate = new Date(payload.exp * 1000);
+      const expired = Date.now() > expDate.getTime();
+      expAlert.className = `alert mb-0 ${expired ? 'alert-danger' : 'alert-success'}`;
+      expAlert.innerHTML = expired
+        ? `<i class="bi bi-x-circle me-2"></i><strong>Expired</strong> — ${expDate.toLocaleString()}`
+        : `<i class="bi bi-check-circle me-2"></i><strong>Valid</strong> — expires ${expDate.toLocaleString()}`;
+      expSection.classList.remove("d-none");
+    } else {
+      expSection.classList.add("d-none");
+    }
+
+    resultsEl.classList.remove("d-none");
+  } catch (e) {
+    errEl.textContent = `Failed to decode: ${e.message}`;
+    errEl.classList.remove("d-none");
+  }
+}
+
+async function copyPre(id) {
+  const text = document.getElementById(id).textContent;
+  if (!text) return;
+  await navigator.clipboard.writeText(text);
+}
+</script>
+{% endblock %}
