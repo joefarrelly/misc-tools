@@ -7,7 +7,8 @@ Flask web app serving a collection of utility tools at `tools.fazz.uk`.
 - **Python 3.13** + Flask + Gunicorn
 - **Docker** — no venvs, ever. All Python work runs in Docker.
 - **Bootstrap 5** + Bootstrap Icons via CDN — no build step, no bundler
-- **All tool logic is client-side JavaScript** — Flask only serves templates
+- **Default: all tool logic is client-side JavaScript** — Flask only serves templates
+- **Exception: tools requiring native binaries** use a server-side POST endpoint (e.g. `/image-ocr/extract` uses pytesseract). Keep these minimal — one endpoint per tool, JSON in/out, no sessions or state.
 
 ## Running locally
 
@@ -20,11 +21,11 @@ App is at `http://localhost:5002`.
 ## Project structure
 
 ```
-app.py                        # Flask routes (one per tool, all GET)
+app.py                        # Flask routes (GET per tool; POST /image-ocr/extract for OCR)
 templates/
   base.html                   # Shared layout: navbar, Bootstrap CDN links, shared CSS
   index.html                  # Home page — tool cards organised by category
-  image_ocr.html              # Image to text (OCR via Tesseract.js)
+  image_ocr.html              # Image to text (OCR via pytesseract server-side)
   dedupe.html                 # De-dupe list
   list_compare.html           # Compare two lists
   epoch.html                  # Epoch ↔ date converter
@@ -51,7 +52,7 @@ requirements.txt
 3. Add a card to `index.html` under the appropriate category section
 4. Add a nav item to the relevant dropdown in `base.html`
 
-All processing should happen in JavaScript inside the template — no server-side form handling.
+Processing should happen in JavaScript inside the template where possible. Use a server-side POST endpoint only when a native binary is required (e.g. tesseract for OCR). Keep endpoints stateless: accept multipart or JSON, return JSON.
 
 ## Branch structure
 
