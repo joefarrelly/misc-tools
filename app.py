@@ -117,7 +117,7 @@ def image_ocr_extract():
     )
 
     if filter_noise:
-        sorted_lines = [l for l in sorted_lines if l["conf"] >= threshold]
+        sorted_lines = [ln for ln in sorted_lines if ln["conf"] >= threshold]
 
     if not sorted_lines:
         return jsonify({"chunks": []})
