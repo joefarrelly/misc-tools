@@ -1,4 +1,6 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request, jsonify
+import pytesseract
+from PIL import Image
 
 app = Flask(__name__)
 
@@ -76,6 +78,63 @@ def csv_json():
 @app.route("/image-ocr")
 def image_ocr():
     return render_template("image_ocr.html")
+
+
+@app.route("/image-ocr/extract", methods=["POST"])
+def image_ocr_extract():
+    file = request.files.get("image")
+    if not file:
+        return jsonify({"error": "No image provided"}), 400
+
+    threshold = int(request.form.get("threshold", 85))
+    filter_noise = request.form.get("filter", "true") == "true"
+
+    img = Image.open(file.stream)
+    data = pytesseract.image_to_data(img, output_type=pytesseract.Output.DICT)
+
+    lines = {}
+    for i, text in enumerate(data["text"]):
+        if not text.strip():
+            continue
+        conf = int(data["conf"][i])
+        key = (data["block_num"][i], data["par_num"][i], data["line_num"][i])
+        if key not in lines:
+            lines[key] = {"words": [], "conf": [], "top": data["top"][i]}
+        lines[key]["words"].append(text)
+        lines[key]["conf"].append(conf)
+
+    sorted_lines = sorted(
+        [
+            {
+                "text": " ".join(v["words"]),
+                "conf": sum(v["conf"]) // len(v["conf"]),
+                "top": v["top"],
+                "key": k,
+            }
+            for k, v in lines.items()
+        ],
+        key=lambda x: x["key"],
+    )
+
+    if filter_noise:
+        sorted_lines = [ln for ln in sorted_lines if ln["conf"] >= threshold]
+
+    if not sorted_lines:
+        return jsonify({"chunks": []})
+
+    avg_h = 20
+    chunks = []
+    current = [sorted_lines[0]["text"]]
+
+    for i in range(1, len(sorted_lines)):
+        gap = sorted_lines[i]["top"] - sorted_lines[i - 1]["top"]
+        if gap > avg_h * 2.5:
+            chunks.append("\n".join(current))
+            current = []
+        current.append(sorted_lines[i]["text"])
+    chunks.append("\n".join(current))
+
+    return jsonify({"chunks": [c for c in chunks if c.strip()]})
 
 
 if __name__ == "__main__":
