@@ -1,4 +1,3 @@
-# misc-tools Flask app
 from flask import Flask, render_template, request, jsonify
 import pytesseract
 from PIL import Image
